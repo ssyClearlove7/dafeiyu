@@ -1,4 +1,4 @@
-"""产品运行循环：全量采集、按会话使用记忆、持久对话、明确授权工具。"""
+"""产品运行循环：启用会话采集、按会话使用记忆、持久对话、明确授权工具。"""
 from contextlib import contextmanager
 import datetime as dt
 import hashlib
@@ -206,9 +206,13 @@ class Engine:
                     account = self.native.account()
                     for thread in self.native.pages("/threads"):
                         room = thread["peerId"]
+                        if room not in self.enabled_rooms():
+                            continue
                         backfilled = self.store.state("backfilled:" + account + ":" + room, False)
                         found_old = False
                         for item in self.native.pages("/threads/" + __import__("urllib.parse", fromlist=["quote"]).quote(room, safe="") + "/messages"):
+                            if room not in self.enabled_rooms():
+                                break
                             ident = self.store.source(account, room, item["id"])
                             with self.store.connect() as db:
                                 existing = db.execute("SELECT id FROM events WHERE source=?", (ident,)).fetchone()

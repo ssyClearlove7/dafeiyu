@@ -29,6 +29,8 @@ def build(platform, runtime=None, signing_key=None, output_name=None, reuse_depe
         raise ValueError("构建目录已存在，请指定新的工作副本或核对后手动清理：" + str(output))
     version = output / "versions" / __version__
     version.mkdir(parents=True)
+    for destination in (output / "LICENSE", version / "LICENSE"):
+        shutil.copy2(ROOT / "LICENSE", destination)
     shutil.copytree(ROOT / "dafy", version / "dafy", ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
     legacy = version / "V1.2.4"
     legacy.mkdir()
