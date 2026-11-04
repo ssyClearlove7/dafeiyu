@@ -1,0 +1,8 @@
+[Unit]
+Description=Renew Dafy public panel HTTPS certificate
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/dafy-certbot/bin/certbot renew --cert-name dafy-panel --quiet --no-random-sleep-on-renew

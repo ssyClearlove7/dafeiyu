@@ -1,0 +1,20 @@
+[Unit]
+Description=Dafy native WeChat connection
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=@ROOT@
+EnvironmentFile=@DATA@/runtime.env
+ExecStart=@ROOT@/bin/wx serve --server-config @DATA@/server.toml
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=@DATA@
+TimeoutStopSec=30
+
+[Install]
+WantedBy=default.target

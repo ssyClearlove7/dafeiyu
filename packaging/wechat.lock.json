@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "version": "1.3.3",
+  "repository": "thisnick/agent-wechat",
+  "sourceCommit": "7d4da1cb2b7995b937e252485c060cb6450949b7",
+  "assets": [
+    {
+      "name": "wx-v1.3.3-linux-x64-gnu",
+      "platform": "linux",
+      "arch": "x64",
+      "libc": "gnu",
+      "minimumGlibc": "2.36",
+      "rustTarget": "x86_64-unknown-linux-gnu",
+      "bytes": 35516856,
+      "sha256": "fe6cbca0fd8b2ed62d8964100d762ffeef40e268c43e8d9f7919052526d3b8a3"
+    },
+    {
+      "name": "wx-v1.3.3-win32-x64.exe",
+      "platform": "win32",
+      "arch": "x64",
+      "rustTarget": "x86_64-pc-windows-msvc",
+      "bytes": 31674880,
+      "sha256": "7fdbfdba3aee24c7286cc07a3c654856cc82b06f911932d8bf18e16484c5487e"
+    }
+  ]
+}

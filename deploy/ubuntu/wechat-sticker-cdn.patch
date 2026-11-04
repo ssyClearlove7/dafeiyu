@@ -1,0 +1,30 @@
+--- a/packages/native-client-rust/crates/wechat-protocol/src/sticker.rs
++++ b/packages/native-client-rust/crates/wechat-protocol/src/sticker.rs
+@@ -38,7 +38,7 @@
+         reqwest::Url::parse(value).map_err(|_| anyhow::anyhow!("sticker_source_not_allowed"))?;
+     ensure!(
+         ["http", "https"].contains(&url.scheme())
+-            && url.host_str() == Some("snsvideo.c2c.wechat.com")
++            && matches!(url.host_str(), Some("snsvideo.c2c.wechat.com" | "vweixinf.tc.qq.com"))
+             && url.username().is_empty()
+             && url.password().is_none()
+             && url.fragment().is_none()
+@@ -69,7 +69,8 @@
+     }
+     progress(0, Some(descriptor.expected_bytes))?;
+     let port = if url.scheme() == "https" { 443 } else { 80 };
+-    let addresses = ("snsvideo.c2c.wechat.com", port)
++    let host = url.host_str().expect("validated sticker host");
++    let addresses = (host, port)
+         .to_socket_addrs()
+         .map_err(|_| anyhow::anyhow!("sticker_dns_failed"))?
+         .collect::<Vec<_>>();
+@@ -89,7 +90,7 @@
+         .connect_timeout(Duration::from_secs(5))
+         .redirect(reqwest::redirect::Policy::none())
+         .no_proxy()
+-        .resolve("snsvideo.c2c.wechat.com", *address)
++        .resolve(host, *address)
+         .build()?;
+     let mut response = client
+         .get(url)

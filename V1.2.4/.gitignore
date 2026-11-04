@@ -1,0 +1,17 @@
+
+cloud_settings.json
+cloud_settings.tmp
+voice_transcripts.json
+voice_transcripts.tmp
+__pycache__/
+*.pyc
+*.log
+*.err
+cloud-asr-check.wav
+sticker-import-*/
+repair-backup-*/
+
+sticker_inventory.json
+sticker_catalog.json
+sticker_skill_jobs.json
+.sticker-library.lock
