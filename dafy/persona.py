@@ -23,6 +23,8 @@ class Persona:
             value = {kind: self.paths.path(name).read_text(encoding="utf-8-sig") for kind, name in
                      (("base", "persona.txt"), ("evolved", "persona_evolved.txt"))}
             value["traits"] = self.paths.json("persona_traits.json", TRAITS)
+            teaching = self.paths.path("taught_behavior.txt")
+            value["teaching"] = teaching.read_text(encoding="utf-8-sig") if teaching.exists() else ""
             value["revision"] = hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
             return value
 
@@ -30,7 +32,8 @@ class Persona:
         value = self.snapshot()
         traits = "；".join(key + "：" + LABELS[number] for key, number in value["traits"].items())
         return ("【基础人设，始终优先】\n" + value["base"] + "\n【已有演化人设】\n" + value["evolved"] +
-                "\n【长期形成的表达习惯】" + traits + "\n基础身份不因对话改变，不复述私人资料作为公开人格。")
+                "\n【长期形成的表达习惯】" + traits + "\n【管理员教导人设】\n" + value["teaching"] +
+                "\n基础身份不因对话改变，不复述私人资料作为公开人格。")
 
     def save(self, kind, body, source, expected=None):
         if kind not in {"base", "evolved", "teaching"} or not isinstance(body, str) or kind == "base" and not body.strip() or len(body) > 30000:

@@ -116,7 +116,7 @@ class Console:
         if path == "/api/persona":
             return dict(app.persona.snapshot(), ok=True)
         if path == "/api/taught-rules":
-            text = app.paths.json("console_teaching.json", {}).get("text", "")
+            text = app.persona.snapshot()["teaching"]
             return {"ok": True, "text": text, "revision": hashlib.sha256(text.encode()).hexdigest()}
         if path == "/api/stickers":
             return {"ok": True, "items": [dict(r, what=r["description"], keys=r["keywords"]) for r in app.sticker_entries()]}
@@ -262,7 +262,6 @@ class Console:
             if body.get("revision") != before["revision"]:
                 raise ValueError("教导已被修改，请刷新后重试")
             app.persona.save("teaching", text, "控制台管理员")
-            app.paths.save("console_teaching.json", {"text": text})
             return self.get("/api/taught-rules", {})
         if path in {"/api/send", "/api/stickers/send"}:
             room = body.get("room", "")
