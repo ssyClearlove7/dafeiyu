@@ -20,6 +20,8 @@ class Models:
 
     def request(self, feature, payload=None, files=None, form=None, binary=False):
         config = self.settings.read()["models"][feature]
+        if not config.get("enabled", True):
+            raise ModelError("该语音能力已在控制台关闭")
         if not config["key"]:
             raise ModelError("请先在控制台配置" + feature + "服务密钥")
         payload = dict(payload or {}, model=config["model"]) if files is None else None
@@ -69,6 +71,9 @@ class Models:
 
     def chat(self, messages, tools=None, max_tokens=1600, temperature=0.7, feature="chat"):
         body = {"messages": messages, "stream": False, "max_tokens": max_tokens, "temperature": temperature}
+        config = self.settings.read()["models"][feature]
+        if urlparse(config["url"]).hostname == "api.deepseek.com" and config["model"] in {"deepseek-flash", "deepseek-v4-flash", "deepseek-v4-pro"}:
+            body["thinking"] = {"type": "disabled"}
         if tools:
             body["tools"] = tools
         value = self.request(feature, body)
@@ -123,7 +128,7 @@ class Models:
         if config["protocol"] == "openai_speech":
             data = self.request("tts", {"input": text, "voice": config["voice"], "response_format": "wav"}, binary=True)
         else:
-            source = {"text": text, "voice": config["voice"], "language_type": "Chinese"}
+            source = {"text": text, "voice": config["voice"], "format": "wav", "sample_rate": 24000}
             if instruction:
                 source["instruction"] = instruction
             value = self.request("tts", {"input": source})

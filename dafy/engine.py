@@ -291,6 +291,10 @@ class Engine:
         return self.store.search(turn["account"], turn["room"], ids=ids)
 
     def process(self, turn):
+        if self.muted(turn["room"]):
+            with self.store.connect() as db:
+                db.execute("UPDATE turns SET status='completed',updated=? WHERE id=?", (time.time(), turn["id"]))
+            return
         rows = self.original(turn)
         if not rows:
             with self.store.connect() as db:
@@ -581,7 +585,7 @@ class Engine:
         text = result["text"].strip()
         wants_text = any(re.search(r"不要语音|别发语音|用文字|打字", x["body"]) for x in rows)
         wants_voice = any(re.search(r"用语音|语音回复|说给我听", x["body"]) for x in rows)
-        if (result.get("voice") or wants_voice) and not wants_text and self.settings.read()["models"]["tts"]["key"]:
+        if (result.get("voice") or wants_voice) and not wants_text and self.settings.read()["models"]["tts"]["key"] and self.settings.read()["models"]["tts"].get("enabled", True):
             with self.paths.temporary() as folder:
                 audio = self.models.speech(text, folder / "voice.wav")
                 states.append(self.deliver(turn["id"] + ":voice", turn["room"], text, attachment=audio, kind="voice"))
@@ -605,10 +609,17 @@ class Engine:
                     states.append(self.deliver(turn["id"] + ":sticker", turn["room"], "", attachment=path, kind="image"))
         return states
 
+    def muted(self, room):
+        state = self.store.state("console_mutes", {})
+        now = time.time()
+        return state.get(room, 0) > now or (state.get("global", 0) > now and room not in self.settings.read()["admins"])
+
     def deliver(self, ident, room, text, allow_quiet=False, attachment=None, kind=None):
         account = self.store.state("account_identity", "")
         if room not in self.enabled_rooms():
             raise PermissionError("目标会话未启用互动，未发送")
+        if not allow_quiet and self.muted(room):
+            raise RuntimeError("该会话正在静音，未发送")
         with self.store.connect() as db:
             existing = db.execute("SELECT * FROM deliveries WHERE id=?", (ident,)).fetchone()
             if existing:
@@ -672,6 +683,8 @@ class Engine:
         if self.settings.quiet() or not self.settings.read()["interaction"]["proactive"]:
             return
         for room in sorted(self.enabled_rooms()):
+            if self.muted(room):
+                continue
             key = "next_contact:" + room
             planned = self.store.state(key)
             if planned is None:

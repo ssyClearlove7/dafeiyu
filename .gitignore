@@ -47,3 +47,5 @@ V1.2.4/stickers/library/*
 *.png
 *.jpg
 *.gif
+
+!V1.2.4/console-assets/avatar.png

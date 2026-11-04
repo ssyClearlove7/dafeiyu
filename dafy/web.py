@@ -15,6 +15,7 @@ import uuid
 from .paths import CODE
 from .native import NativeError
 from .models import ModelError
+from .console import Console
 
 
 class Jobs:
@@ -82,7 +83,7 @@ def make_server(engine, host="0.0.0.0", port=8790):
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Referrer-Policy", "no-referrer")
             self.send_header("X-Frame-Options", "DENY")
-            self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'")
+            self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'")
             for name, text in (headers or {}).items():
                 self.send_header(name, text)
             self.end_headers()
@@ -133,15 +134,31 @@ def make_server(engine, host="0.0.0.0", port=8790):
         def route_get(self):
             path = urlparse(self.path).path
             query = {key: values[-1] for key, values in parse_qs(urlparse(self.path).query).items()}
-            if path in {"/", "/app.js", "/app.css"}:
+            if path in {"/", "/index.html"} or path in {"/console/console.js", "/console/product.js", "/console/console.css", "/console/avatar.png"}:
                 self.admission()
-                name = {"/": "index.html", "/app.js": "app.js", "/app.css": "app.css"}[path]
-                file = Path(__file__).parent / "ui" / name
-                return self.send(200, file.read_bytes(), mimetypes.guess_type(name)[0] + "; charset=utf-8")
+                name = "index.html" if path in {"/", "/index.html"} else path.rsplit("/", 1)[-1]
+                file = CODE / "V1.2.4" / "console-assets" / name
+                raw = file.read_bytes()
+                if name == "index.html":
+                    raw = raw.decode("utf-8").replace("__RUNTIME__", "product").encode("utf-8")
+                return self.send(200, raw, mimetypes.guess_type(name)[0] + ("; charset=utf-8" if name != "avatar.png" else ""))
             if path == "/api/console/state":
                 self.admission()
                 return self.send(200, {"csrf": csrf})
             self.admission()
+            if path == "/api/wechat-login/qr":
+                return self.send(200, engine.native.qr(query["attempt"]), "image/png")
+            if path.startswith("/sticker/"):
+                from urllib.parse import unquote
+                name = unquote(path[len("/sticker/"):])
+                if name not in {r["file"] for r in engine.sticker_entries()}:
+                    raise ValueError("素材不存在")
+                file = engine.paths.path("assets/" + name)
+                return self.send(200, file.read_bytes(), mimetypes.guess_type(name)[0] or "application/octet-stream")
+            console = Console(engine, self.scope)
+            result = console.get(path, query)
+            if result is not None:
+                return self.send(200, result)
             if path == "/api/status":
                 return self.send(200, engine.status())
             if path == "/api/diagnostics":
@@ -241,6 +258,10 @@ def make_server(engine, host="0.0.0.0", port=8790):
                 engine.paths.protect(target)
                 return self.send(200, {"upload": ident})
             body = self.body()
+            with engine.gate.work():
+                result = Console(engine, self.scope).post(path, body)
+            if result is not None:
+                return self.send(200, result)
             if path == "/api/settings/save":
                 before = engine.settings.read()
                 if "wechat" in body and any(body["wechat"].get(k, before["wechat"][k]) != before["wechat"][k] for k in ("url", "account")):

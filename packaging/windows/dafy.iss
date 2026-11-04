@@ -2,13 +2,13 @@
   #error Payload directory is required
 #endif
 #ifndef ProductVersion
-  #define ProductVersion "1.0.0rc2"
+  #define ProductVersion "1.0.0rc3"
 #endif
 [Setup]
 AppId={{5C279313-55C9-494E-9A03-BA4E9B00DB84}
 AppName=大肥鱼
 AppVersion={#ProductVersion}
-VersionInfoVersion=1.0.0.2
+VersionInfoVersion=1.0.0.3
 DefaultDirName={localappdata}\Programs\Dafeiyu
 DefaultGroupName=大肥鱼
 PrivilegesRequired=lowest

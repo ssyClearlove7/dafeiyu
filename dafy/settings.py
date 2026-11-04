@@ -7,10 +7,10 @@ from zoneinfo import ZoneInfo
 from .paths import LOCK
 
 MODEL_DEFAULTS = {
-    "chat": {"protocol": "chat_completions", "url": "https://api.deepseek.com/chat/completions", "model": "deepseek-chat", "key": "", "timeout": 60, "retries": 1},
+    "chat": {"protocol": "chat_completions", "url": "https://api.deepseek.com/chat/completions", "model": "deepseek-flash", "key": "", "timeout": 60, "retries": 1},
     "vision": {"protocol": "chat_completions", "url": "https://api.deepseek.com/chat/completions", "model": "deepseek-flash", "key": "", "timeout": 90, "retries": 1},
-    "asr": {"protocol": "chat_audio", "url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions", "model": "qwen3-asr-flash", "key": "", "timeout": 90, "retries": 1},
-    "tts": {"protocol": "dashscope_tts", "url": "https://dashscope.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer", "model": "cosyvoice-v3-flash", "key": "", "voice": "", "timeout": 90, "retries": 1},
+    "asr": {"protocol": "chat_audio", "url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions", "model": "qwen3-asr-flash", "key": "", "timeout": 90, "retries": 1, "enabled": True},
+    "tts": {"protocol": "dashscope_tts", "url": "https://dashscope.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer", "model": "cosyvoice-v3-flash", "key": "", "voice": "", "timeout": 90, "retries": 1, "enabled": True},
 }
 PROTOCOLS = {"chat": {"chat_completions"}, "vision": {"chat_completions"},
              "asr": {"chat_audio", "openai_transcription"}, "tts": {"dashscope_tts", "openai_speech"}}
@@ -91,6 +91,8 @@ class Settings:
         if type(value["backup"]["keep"]) is not int or not 1 <= value["backup"]["keep"] <= 1000:
             raise ValueError("自动备份保留份数须为1至1000")
         for kind, config in value["models"].items():
+            if "enabled" in config and type(config["enabled"]) is not bool:
+                raise ValueError("语音开关须为布尔值")
             if not isinstance(config["key"], str) or len(config["key"]) > 10000:
                 raise ValueError("模型密钥格式无效")
             if config["protocol"] not in PROTOCOLS[kind]:

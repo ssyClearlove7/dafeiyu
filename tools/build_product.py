@@ -34,6 +34,7 @@ def build(platform, runtime=None, signing_key=None, output_name=None, reuse_depe
     shutil.copytree(ROOT / "dafy", version / "dafy", ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
     legacy = version / "V1.2.4"
     legacy.mkdir()
+    shutil.copytree(ROOT / "V1.2.4/console-assets", legacy / "console-assets")
     # 原项目仍在使用，不将其中的配置、凭据、缓存、聊天和当前人设打入程序包。
     for path in (ROOT / "V1.2.4").glob("*.py"):
         if not path.name.startswith("test_"):
